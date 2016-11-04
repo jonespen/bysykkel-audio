@@ -6,6 +6,6 @@ import stations from './data/stations.json';
 import './index.css';
 
 ReactDOM.render(
-  <App trips={trips} stations={stations.stations} />,
+  <App trips={trips.slice(199, trips.length)} stations={stations.stations} />,
   document.getElementById('root')
 );

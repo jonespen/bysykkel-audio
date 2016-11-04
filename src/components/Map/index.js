@@ -2,11 +2,13 @@ import React, { PropTypes } from 'react';
 import find from 'lodash/find';
 import { Map as RLMap, CircleMarker, Popup, TileLayer } from 'react-leaflet';
 import AnimatedCircleMarker from '../AnimatedCircleMarker';
+import { eventQueueTypes } from '../../constants';
 
 const accessToken = 'pk.eyJ1Ijoiam9uZXNwZW4iLCJhIjoiY2l1YXp5cXM4MDAwYzJ6cWx5ZGxiajF5eCJ9.EnccAQfyBW_mERfYSiup_g';
 const tileLayerUrl = `https://api.mapbox.com/styles/v1/jonespen/ciub42x9p004m2iodxwdw87aq/tiles/256/{z}/{x}/{y}@2x?access_token=${accessToken}`;
 const osloLatLng = [59.9139, 10.7522];
-const Map = ({ stations, tripsInCurrentTime }) => {
+
+const Map = ({ stations, eventQueue }) => {
 	return (
 	  <RLMap center={osloLatLng} zoom={13}>
 	    <TileLayer
@@ -22,24 +24,34 @@ const Map = ({ stations, tripsInCurrentTime }) => {
 			    </CircleMarker>
 	  		)
 	  	})}
-	  	{tripsInCurrentTime.start.map((trip) => {
-	  		const startStation = find(stations, (station) => station.id === trip.start_station_id);
+	  	{Object.keys(eventQueue).map((key) => {
+  			const event = eventQueue[key];
+
+	  		let prop;
+	  		let color;
+				let implode;
+
+	  		if(event.type === eventQueueTypes.start){
+	  			prop = 'start_station_id';
+	  			color = '#27ae60';
+	  		} else if(event.type === eventQueueTypes.end){
+	  			prop = 'end_station_id';
+	  			color = '#c0392b';
+					implode = true;
+	  		}
+
+	  		if(!prop){
+  				return null;
+	  		}
+
+	  		const eventStation = find(stations, (station) => station.id === event[prop]);
 	  		return (
 					<AnimatedCircleMarker
-					key={`${trip.start_station_id}_${trip.end_station_id}`}
-					center={[startStation.center.latitude, startStation.center.longitude]}
-					color="red"
-					/>
-	  		)
-	  	})}
-	  	{tripsInCurrentTime.end.map((trip) => {
-	  		const endStation = find(stations, (station) => station.id === trip.end_station_id);
-	  		console.log(endStation);
-	  		return (
-					<AnimatedCircleMarker
-						key={`${trip.start_station_id}_${trip.end_station_id}`}
-						center={[endStation.center.latitude, endStation.center.longitude]}
-						color="green"
+						key={`${event.id}`}
+						center={[eventStation.center.latitude, eventStation.center.longitude]}
+						color={color}
+						implode={implode}
+						size={event.size}
 					/>
 	  		)
 	  	})}
@@ -49,10 +61,7 @@ const Map = ({ stations, tripsInCurrentTime }) => {
 
 Map.propTypes = {
 	stations: PropTypes.array.isRequired,
-	tripsInCurrentTime: PropTypes.shape({
-		start: PropTypes.array.isRequired,
-		end: PropTypes.array.isRequired,
-	}).isRequired,
+	eventQueue: PropTypes.object.isRequired,
 }
 
 export default Map;
